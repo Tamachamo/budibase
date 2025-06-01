@@ -1,0 +1,51 @@
+version: "3.8"
+
+services:
+  redis:
+    image: redis:6.2
+    container_name: budibase_redis
+
+  couchdb:
+    image: couchdb:3.2
+    container_name: budibase_couchdb
+    environment:
+      - COUCHDB_USER=admin
+      - COUCHDB_PASSWORD=admin
+    ports:
+      - "5984:5984"
+
+  minio:
+    image: minio/minio
+    container_name: budibase_minio
+    command: server /data
+    ports:
+      - "9000:9000"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+
+  proxy:
+    image: budibase/proxy
+    container_name: budibase_proxy
+    ports:
+      - "10000:80"
+    depends_on:
+      - worker
+      - admin
+      - minio
+
+  admin:
+    image: budibase/admin
+    container_name: budibase_admin
+    depends_on:
+      - couchdb
+      - redis
+      - minio
+
+  worker:
+    image: budibase/worker
+    container_name: budibase_worker
+    depends_on:
+      - couchdb
+      - redis
+      - minio
